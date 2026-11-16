@@ -1,0 +1,44 @@
+# Entorno de DESARROLLO: código montado como volumen + recarga en caliente.
+#   docker compose up
+# Abre http://localhost:3000 -> el asistente de primer inicio te pedirá crear la cuenta
+# del profesional y si quieres cargar datos de prueba.
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: peluqueria
+      POSTGRES_PASSWORD: peluqueria
+      POSTGRES_DB: peluqueria
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U peluqueria -d peluqueria"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+  app:
+    build:
+      context: .
+      target: dev
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://peluqueria:peluqueria@db:5432/peluqueria?schema=public
+      SESSION_SECRET: ${SESSION_SECRET:-dev-secret-no-usar-en-produccion-1234567890}
+      BUSINESS_TZ: ${BUSINESS_TZ:-Europe/Madrid}
+      WATCHPACK_POLLING: "true"   # recarga fiable en Docker Desktop (Mac/Windows)
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app                     # el código fuente vive en tu máquina
+      - node_modules:/app/node_modules   # dependencias dentro del contenedor
+      - next_cache:/app/.next
+
+volumes:
+  pgdata:
+  node_modules:
+  next_cache:
