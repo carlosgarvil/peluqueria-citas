@@ -1,0 +1,32 @@
+# Blueprint de Render: servicio web (imagen Docker de producción) + PostgreSQL gestionado.
+# Despliegue: Render Dashboard -> New -> Blueprint -> elegir este repositorio.
+services:
+  - type: web
+    name: peluqueria-citas
+    runtime: docker
+    plan: free
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: peluqueria-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: BUSINESS_TZ
+        value: Europe/Madrid
+      # El servidor standalone de Next escucha en HOSTNAME:PORT
+      - key: HOSTNAME
+        value: 0.0.0.0
+      - key: PORT
+        value: "3000"
+
+databases:
+  - name: peluqueria-db
+    plan: free
+    region: frankfurt
+    databaseName: peluqueria
+    user: peluqueria
